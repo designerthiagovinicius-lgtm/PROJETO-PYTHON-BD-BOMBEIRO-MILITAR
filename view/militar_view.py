@@ -1,5 +1,6 @@
-from services import militar_service
+from services import militar_service, usuario_service
 from view.utils import verificar_pin_admin
+import getpass
 
 def menu_militar(user_auth):
     while True:
@@ -8,6 +9,7 @@ def menu_militar(user_auth):
         print("2 - Listar Militares (com busca)")
         print("3 - Editar Militar")
         print("4 - Excluir Militar")
+        print("5 - Cadastrar Novo Usuário (Acesso ao Sistema)")
         print("0 - Voltar")
 
         opcao = input("Digite a opção escolhida: ")
@@ -42,7 +44,6 @@ def menu_militar(user_auth):
                 print("Nenhum militar encontrado.")
             else:
                 for m in militares:
-                    # m[0]=ID, m[1]=Nome, m[2]=Patente, m[3]=Especialidade, m[4]=Nome_Posto
                     print(f"{m[0]:<5} | {m[1]:<30} | {m[2]:<15} | {m[3]:<20} | {m[4]:<20}")
             print("="*110)
 
@@ -59,7 +60,6 @@ def menu_militar(user_auth):
                 print("Erro: O ID deve ser um número inteiro.")
                 continue
 
-            # Obtém os dados atuais
             militar_atual = militar_service.obter_militar_por_id(militar_id)
             if not militar_atual:
                 print("Militar não encontrado.")
@@ -100,8 +100,32 @@ def menu_militar(user_auth):
 
             militar_service.excluir_militar(militar_id)
 
+        elif opcao == "5":
+            if user_auth[5] != 'admin':
+                print("Apenas administradores podem cadastrar novos usuários.")
+                continue
+            if not verificar_pin_admin(user_auth):
+                continue
+
+            print("\n--- CADASTRO DE NOVO USUÁRIO ---")
+            nome = input("Nome Completo: ")
+            email = input("E-mail (Login): ")
+            senha = getpass.getpass("Senha Inicial: ")
+            nivel_militar = input("Nível Militar (Ex: Sargento, Cabo): ")
+            
+            print("\nNível de Acesso:")
+            print("1 - Usuário Comum (Apenas Consultas)")
+            print("2 - Administrador (Controle Total)")
+            permissao_opt = input("Escolha o nível: ")
+            permissao = 'admin' if permissao_opt == "2" else 'user'
+            
+            pin = None
+            if permissao == 'admin':
+                pin = getpass.getpass("Defina um PIN de 4 dígitos para este Administrador: ")
+            
+            usuario_service.criar_usuario(nome, email, senha, nivel_militar, permissao, pin)
+
         elif opcao == "0":
             break
-
         else:
             print("Opção inválida!")

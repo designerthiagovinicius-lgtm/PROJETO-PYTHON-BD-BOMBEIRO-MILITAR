@@ -1,6 +1,8 @@
 from config.conexao import conectar
 
-
+# Este código é responsável por gerenciar as viaturas operacionais cadastrados no sistema, 
+# incluindo funções para cadastrar novas viaturas, listar viaturas, obter detalhes de uma viatura específica, deletar e editar viaturas. 
+# Ele inclui validações para garantir que os dados inseridos sejam corretos e seguros, como validação de placa e ID numérico.
 def validar_placa(placa: str) -> bool:
     """Valida se a placa não está vazia e tem entre 6 e 10 caracteres."""
     if not placa or len(placa.strip()) == 0:

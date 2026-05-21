@@ -1,6 +1,8 @@
 from config.conexao import conectar
 
-
+# Este código é responsável por gerenciar os militares cadastrados no sistema, 
+# incluindo funções para cadastrar novos militares, listar militares, obter detalhes de um militar específico, 
+# editar e excluir militares. Ele inclui validações para garantir que os dados inseridos sejam corretos e seguros.
 def validar_nome(nome: str, min_chars: int = 3) -> bool:
     """Valida se o nome tem o mínimo de caracteres e não está vazio."""
     if not nome or len(nome.strip()) < min_chars:

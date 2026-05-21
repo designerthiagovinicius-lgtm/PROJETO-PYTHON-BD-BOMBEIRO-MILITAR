@@ -1,6 +1,15 @@
 import psycopg2
 from config.conexao import conectar
 
+def _coluna_existe(cursor, tabela: str, coluna: str) -> bool:
+    """Verifica se uma coluna existe em uma tabela do banco de dados."""
+    cursor.execute("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name=%s AND column_name=%s;
+    """, (tabela, coluna))
+    return cursor.fetchone() is not None
+
 def atualizar_banco_dados():
     """
     Script de migração para adicionar as colunas de segurança à tabela usuario.
@@ -29,16 +38,8 @@ def atualizar_banco_dados():
         colunas_adicionadas = 0
         
         for nome_coluna, tipo_coluna in novas_colunas:
-            # Verifica se a coluna já existe
-            cursor.execute("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name='usuario' AND column_name=%s;
-            """, (nome_coluna,))
-            
-            resultado = cursor.fetchone()
-            
-            if not resultado:
+            # Verifica se a coluna já existe usando a função auxiliar
+            if not _coluna_existe(cursor, 'usuario', nome_coluna):
                 print(f"Adicionando coluna '{nome_coluna}'...")
                 cursor.execute(f"ALTER TABLE usuario ADD COLUMN {nome_coluna} {tipo_coluna};")
                 colunas_adicionadas += 1

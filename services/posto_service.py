@@ -1,5 +1,10 @@
 from config.conexao import conectar
 
+# Este código é responsável por gerenciar os postos/unidades operacionais cadastrados no sistema, 
+# incluindo funções para cadastrar novos postos, listar postos, obter detalhes de um posto específico, deletar e editar postos. 
+# Ele inclui validações para garantir que os dados inseridos sejam corretos e seguros, como validação de nome e ID numérico.
+
+
 
 def validar_nome(nome: str, min_chars: int = 3) -> bool:
     """Valida se o nome tem o mínimo de caracteres e não está vazio."""

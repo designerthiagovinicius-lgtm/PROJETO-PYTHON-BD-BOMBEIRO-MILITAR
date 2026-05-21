@@ -1,7 +1,9 @@
 from config.conexao import conectar
 from datetime import datetime
 
-
+# Este código é responsável por gerenciar as habilitações de militares para condução de viaturas, 
+# incluindo funções para associar militares a viaturas, listar habilitações, obter detalhes de uma habilitação, 
+# editar e excluir habilitações. Ele inclui validações para garantir que os dados inseridos sejam corretos e seguros.
 def validar_data(data_str: str) -> bool:
     """Valida se a data está em formato válido (YYYY-MM-DD)."""
     try:

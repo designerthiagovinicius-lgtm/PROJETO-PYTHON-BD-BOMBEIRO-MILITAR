@@ -1,6 +1,6 @@
 from config.conexao import conectar
-from config.cryspt import checar_password, criptografar, criptografar_pin, checar_pin
-
+from config.cryspt import criptografar_pin, checar_pin # Manter para PINs
+from Utils.auth import hash_password # Importar da nova localização Utils/auth.py
 
 def validar_nome(nome: str, min_chars: int = 3) -> bool:
     """Valida se o nome tem o mínimo de caracteres e não está vazio."""
@@ -38,7 +38,7 @@ def criar_usuario(nome: str, email: str, password: str, nivel_militar: str, perm
     try:
         con = conectar()
         cursor = con.cursor()
-        password_hash = criptografar(password)
+        password_hash = hash_password(password) # Usa a função hash_password do auth.py
         admin_pin_hash = criptografar_pin(admin_pin) if admin_pin else None
 
         # Verifica se as colunas de segurança existem
@@ -72,149 +72,6 @@ def criar_usuario(nome: str, email: str, password: str, nivel_militar: str, perm
         con.close()
 
 
-def login(email: str, password: str):
-    """
-    Realiza o login do usuário com controle de tentativas.
-    Retorna os dados do usuário se bem-sucedido, None caso contrário.
-    """
-    try:
-        conn = conectar()
-        cursor = conn.cursor()
-
-        # Verifica se as colunas de segurança existem
-        tem_tentativas = _coluna_existe(cursor, 'usuario', 'tentativas_login')
-        tem_bloqueado = _coluna_existe(cursor, 'usuario', 'bloqueado')
-
-        # Busca o usuário pelo email
-        sql = "SELECT * FROM usuario WHERE email = %s"
-        cursor.execute(sql, (email,))
-        usuario = cursor.fetchone()
-
-        if not usuario:
-            print("Email ou senha inválidos!")
-            return None
-
-        # Verifica se o usuário está bloqueado (somente se a coluna existir)
-        if tem_bloqueado and usuario[8]:  # usuario[8] = bloqueado
-            print("Sua conta foi bloqueada por segurança. Entre em contato com o administrador.")
-            return None
-
-        # Verifica a senha
-        password_hash = usuario[3]
-        if checar_password(password, password_hash):
-            # Senha correta: reseta tentativas de login (somente se a coluna existir)
-            if tem_tentativas:
-                sql_reset = "UPDATE usuario SET tentativas_login = 0 WHERE id_usuario = %s"
-                cursor.execute(sql_reset, (usuario[0],))
-                conn.commit()
-            return usuario
-        else:
-            if not tem_tentativas or not tem_bloqueado:
-                # Banco sem colunas de segurança: avisa e retorna
-                print("Email ou senha inválidos!")
-                print("\n[AVISO] Execute 'python migracao_db.py' para habilitar o controle de tentativas de login.")
-                return None
-
-            # Senha incorreta: incrementa tentativas
-            tentativas_atuais = usuario[7]  # usuario[7] = tentativas_login
-            novas_tentativas = tentativas_atuais + 1
-
-            if novas_tentativas >= 3:
-                sql_bloquear = "UPDATE usuario SET tentativas_login = %s, bloqueado = TRUE WHERE id_usuario = %s"
-                cursor.execute(sql_bloquear, (novas_tentativas, usuario[0]))
-                conn.commit()
-                print(f"Sua conta foi bloqueada após {novas_tentativas} tentativas de login falhadas.")
-                print("Para recuperar sua conta, use a opção de redefinição de senha.")
-                return None
-            else:
-                sql_update = "UPDATE usuario SET tentativas_login = %s WHERE id_usuario = %s"
-                cursor.execute(sql_update, (novas_tentativas, usuario[0]))
-                conn.commit()
-                tentativas_restantes = 3 - novas_tentativas
-                print(f"Email ou senha inválidos! Tentativas restantes: {tentativas_restantes}")
-                return None
-
-    except Exception as e:
-        print(f"Erro ao fazer login: {e}")
-        return None
-    finally:
-        cursor.close()
-        conn.close()
-
-
-def redefinir_senha(email: str, nova_senha: str):
-    """
-    Redefine a senha de um usuário após validação do email.
-    Incrementa o contador de trocas de senha e bloqueia se ultrapassar 3 trocas.
-    """
-    try:
-        conn = conectar()
-        cursor = conn.cursor()
-
-        # Verifica se as colunas de segurança existem
-        tem_contador = _coluna_existe(cursor, 'usuario', 'contador_trocas_senha')
-        tem_bloqueado = _coluna_existe(cursor, 'usuario', 'bloqueado')
-
-        # Busca o usuário pelo email
-        sql = "SELECT * FROM usuario WHERE email = %s"
-        cursor.execute(sql, (email,))
-        usuario = cursor.fetchone()
-
-        if not usuario:
-            print("Email não encontrado no sistema.")
-            return False
-
-        if tem_contador:
-            # Verifica o contador de trocas de senha
-            contador_trocas = usuario[9]  # usuario[9] = contador_trocas_senha
-
-            if contador_trocas >= 3:
-                print("Você atingiu o limite de 3 redefinições de senha. Sua conta foi bloqueada por segurança.")
-                print("Entre em contato com o administrador para desbloquear.")
-                return False
-
-            nova_senha_hash = criptografar(nova_senha)
-            novo_contador = contador_trocas + 1
-
-            if tem_bloqueado:
-                sql_update = """
-                UPDATE usuario 
-                SET password = %s, contador_trocas_senha = %s, tentativas_login = 0, bloqueado = FALSE
-                WHERE id_usuario = %s
-                """
-            else:
-                sql_update = """
-                UPDATE usuario 
-                SET password = %s, contador_trocas_senha = %s, tentativas_login = 0
-                WHERE id_usuario = %s
-                """
-            cursor.execute(sql_update, (nova_senha_hash, novo_contador, usuario[0]))
-            conn.commit()
-
-            print("Senha redefinida com sucesso!")
-            print(f"Redefinições realizadas: {novo_contador}/3")
-
-            if novo_contador == 3:
-                print("AVISO: Você atingiu o limite máximo de redefinições de senha. Guarde sua nova senha com segurança!")
-        else:
-            # Banco sem colunas de segurança: apenas atualiza a senha
-            nova_senha_hash = criptografar(nova_senha)
-            sql_update = "UPDATE usuario SET password = %s WHERE id_usuario = %s"
-            cursor.execute(sql_update, (nova_senha_hash, usuario[0]))
-            conn.commit()
-            print("Senha redefinida com sucesso!")
-            print("\n[AVISO] Execute 'python migracao_db.py' para habilitar o controle de redefinições de senha.")
-
-        return True
-
-    except Exception as e:
-        print(f"Erro ao redefinir senha: {e}")
-        return False
-    finally:
-        cursor.close()
-        conn.close()
-
-
 def desbloquear_usuario(id_usuario: int):
     """Função administrativa para desbloquear um usuário."""
     try:
@@ -243,16 +100,23 @@ def desbloquear_usuario(id_usuario: int):
         print(f"Erro ao desbloquear usuário: {e}")
         return False
     finally:
-        cursor.close()
-        conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
 def buscar_usuario_por_id(id_usuario: int):
     """Busca um usuário pelo ID."""
+    conn = None
+    cursor = None
     try:
         conn = conectar()
-        cursor = conn.cursor()
+        if not conn:
+            print("Erro: Não foi possível conectar ao banco de dados.")
+            return None
 
+        cursor = conn.cursor()
         sql = "SELECT id_usuario, nome, email, nivel_militar, permissao, bloqueado FROM usuario WHERE id_usuario = %s"
         cursor.execute(sql, (id_usuario,))
         usuario = cursor.fetchone()
@@ -263,14 +127,22 @@ def buscar_usuario_por_id(id_usuario: int):
         print(f"Erro ao buscar usuário: {e}")
         return None
     finally:
-        cursor.close()
-        conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
 def listar_usuarios():
     """Lista todos os usuários do sistema."""
+    conn = None
+    cursor = None
     try:
         conn = conectar()
+        if not conn:
+            print("Erro: Não foi possível conectar ao banco de dados.")
+            return []
+
         cursor = conn.cursor()
 
         tem_bloqueado = _coluna_existe(cursor, 'usuario', 'bloqueado')
@@ -292,5 +164,7 @@ def listar_usuarios():
         print(f"Erro ao listar usuários: {e}")
         return []
     finally:
-        cursor.close()
-        conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()

@@ -245,3 +245,4 @@ def excluir_item(id_item):
     finally:
         cursor.close()
         conn.close()
+# Validações adicionais podem ser adicionadas aqui conforme necessário para o sistema de gestão militar. 

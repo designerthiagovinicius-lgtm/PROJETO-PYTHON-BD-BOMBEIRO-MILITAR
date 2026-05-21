@@ -244,3 +244,4 @@ def validar_opcao_lista(valor: str, opcoes_validas: list, nome_campo: str = "Op�
         return False
     
     return True
+# Validações adicionais podem ser adicionadas aqui conforme necessário para o sistema de gestão militar.
