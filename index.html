@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBMAL — Sistema de Gestão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── Tokens ─────────────────────────────────────────── */
+  :root {
+    --c-white:   #F7F7F5;      /* 60% — fundo dominante       */
+    --c-navy:    #1B3A4B;      /* 30% — estrutura / sidebar   */
+    --c-red:     #C0392B;      /* 10% — acento / destaque     */
+
+    --c-navy-light: #243f52;
+    --c-navy-dark:  #122637;
+    --c-red-light:  #e84535;
+    --c-muted:   #8a9ba8;
+    --c-border:  #dde3e8;
+    --c-surface: #eef1f4;
+    --c-text:    #1a2830;
+    --c-text-2:  #4a6070;
+
+    --radius:    8px;
+    --radius-lg: 14px;
+    --sidebar-w: 220px;
+    --font: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --trans: .18s ease;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: var(--font); background: var(--c-white); color: var(--c-text); font-size: 14px; }
+
+  /* ── Screens ─────────────────────────────────────────── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ══════════════════════════════════════════════════════
+     LOGIN
+  ══════════════════════════════════════════════════════ */
+  #s-login {
+    align-items: center; justify-content: center;
+    background: var(--c-white);
+  }
+  .login-wrap {
+    width: 100%; max-width: 380px; padding: 0 24px;
+    animation: fadeUp .4s ease both;
+  }
+  .login-badge {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 40px;
+  }
+  .login-badge .emblem {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: var(--c-navy); display: flex; align-items: center; justify-content: center;
+  }
+  .login-badge .emblem span { font-size: 22px; }
+  .login-badge h1 { font-size: 15px; font-weight: 500; line-height: 1.3; color: var(--c-text); }
+  .login-badge h1 small { display: block; font-size: 11px; font-weight: 400; color: var(--c-muted); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 2px; }
+
+  .login-card {
+    background: #fff; border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg); padding: 32px 28px;
+  }
+  .login-card h2 { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+  .login-card p  { font-size: 12px; color: var(--c-muted); margin-bottom: 28px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--c-text-2); margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 10px 14px; border: 1px solid var(--c-border);
+    border-radius: var(--radius); font-family: var(--font); font-size: 14px;
+    background: var(--c-white); color: var(--c-text);
+    transition: border-color var(--trans), box-shadow var(--trans);
+    outline: none;
+  }
+  .field input:focus { border-color: var(--c-navy); box-shadow: 0 0 0 3px rgba(27,58,75,.1); }
+
+  .btn-primary {
+    width: 100%; padding: 11px; background: var(--c-navy);
+    color: #fff; border: none; border-radius: var(--radius);
+    font-family: var(--font); font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: background var(--trans);
+    margin-top: 6px;
+  }
+  .btn-primary:hover { background: var(--c-navy-light); }
+
+  .login-error {
+    margin-top: 14px; padding: 10px 14px; background: #fdf0ef;
+    border: 1px solid #f5c6c2; border-radius: var(--radius);
+    font-size: 12px; color: var(--c-red); display: none;
+  }
+  .login-error.show { display: block; }
+
+  /* Credenciais de demo */
+  .demo-creds {
+    margin-top: 24px; padding: 14px; background: var(--c-surface);
+    border-radius: var(--radius); font-size: 11px; color: var(--c-text-2);
+  }
+  .demo-creds strong { display: block; margin-bottom: 6px; color: var(--c-text); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .demo-creds code { font-family: var(--font-mono); font-size: 11px; }
+  .demo-btn {
+    display: inline-block; margin-top: 6px; padding: 4px 10px;
+    background: var(--c-navy); color: #fff; border-radius: 4px;
+    font-size: 11px; cursor: pointer; border: none; font-family: var(--font);
+    transition: background var(--trans);
+  }
+  .demo-btn:hover { background: var(--c-navy-light); }
+
+  /* ══════════════════════════════════════════════════════
+     APP SHELL (Admin + User compartilham)
+  ══════════════════════════════════════════════════════ */
+  #s-app { flex-direction: row; }
+
+  /* Sidebar */
+  .sidebar {
+    width: var(--sidebar-w); min-height: 100vh; background: var(--c-navy);
+    display: flex; flex-direction: column; flex-shrink: 0;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .sidebar-header {
+    padding: 22px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .sidebar-header .sys-name { font-size: 13px; font-weight: 500; color: #fff; }
+  .sidebar-header .sys-sub  { font-size: 10px; color: var(--c-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+  .user-pill {
+    margin: 14px 16px 0;
+    padding: 10px 12px; background: rgba(255,255,255,.07);
+    border-radius: var(--radius); display: flex; align-items: center; gap: 10px;
+  }
+  .user-pill .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--c-red); display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500; color: #fff; flex-shrink: 0;
+  }
+  .user-pill .info { overflow: hidden; }
+  .user-pill .name { font-size: 12px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-pill .role { font-size: 10px; color: var(--c-muted); }
+
+  .nav { flex: 1; padding: 16px 10px; overflow-y: auto; }
+  .nav-section { margin-bottom: 20px; }
+  .nav-section-label {
+    font-size: 9px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(255,255,255,.3); padding: 0 10px; margin-bottom: 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: var(--radius);
+    color: rgba(255,255,255,.65); font-size: 13px; cursor: pointer;
+    transition: background var(--trans), color var(--trans);
+    margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left;
+    font-family: var(--font);
+  }
+  .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .nav-item.active { background: rgba(255,255,255,.12); color: #fff; }
+  .nav-item .icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+
+  .sidebar-footer {
+    padding: 14px 10px; border-top: 1px solid rgba(255,255,255,.08);
+  }
+  .btn-logout {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 9px 10px; border-radius: var(--radius);
+    color: rgba(255,255,255,.5); font-size: 13px; cursor: pointer;
+    transition: all var(--trans); border: none; background: none;
+    font-family: var(--font);
+  }
+  .btn-logout:hover { background: rgba(192,57,43,.2); color: #e87a70; }
+
+  /* Main area */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .topbar {
+    height: 52px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; border-bottom: 1px solid var(--c-border);
+    background: #fff; position: sticky; top: 0; z-index: 10;
+  }
+  .topbar h2 { font-size: 15px; font-weight: 500; color: var(--c-text); }
+  .topbar .breadcrumb { font-size: 12px; color: var(--c-muted); }
+
+  .content { flex: 1; padding: 28px; animation: fadeUp .25s ease both; }
+
+  /* ══════════════════════════════════════════════════════
+     PAGES
+  ══════════════════════════════════════════════════════ */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Dashboard cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 14px; margin-bottom: 28px; }
+  .stat-card {
+    background: #fff; border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg); padding: 18px 20px;
+  }
+  .stat-card .s-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--c-muted); margin-bottom: 10px; }
+  .stat-card .s-val   { font-size: 28px; font-weight: 300; color: var(--c-navy); font-family: var(--font-mono); }
+  .stat-card .s-sub   { font-size: 11px; color: var(--c-muted); margin-top: 4px; }
+  .stat-card.accent { border-left: 3px solid var(--c-red); }
+
+  /* Section header */
+  .section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-hdr h3 { font-size: 14px; font-weight: 500; }
+
+  /* Buttons */
+  .btn {
+    padding: 8px 16px; border-radius: var(--radius); font-family: var(--font);
+    font-size: 13px; font-weight: 500; cursor: pointer; border: none;
+    transition: all var(--trans);
+  }
+  .btn-navy  { background: var(--c-navy); color: #fff; }
+  .btn-navy:hover { background: var(--c-navy-light); }
+  .btn-red   { background: var(--c-red); color: #fff; }
+  .btn-red:hover { background: var(--c-red-light); }
+  .btn-ghost { background: transparent; color: var(--c-text-2); border: 1px solid var(--c-border); }
+  .btn-ghost:hover { background: var(--c-surface); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* Search bar */
+  .search-bar {
+    display: flex; gap: 10px; margin-bottom: 18px;
+  }
+  .search-bar input {
+    flex: 1; padding: 9px 14px; border: 1px solid var(--c-border);
+    border-radius: var(--radius); font-family: var(--font); font-size: 13px;
+    background: var(--c-white); color: var(--c-text); outline: none;
+    transition: border-color var(--trans);
+  }
+  .search-bar input:focus { border-color: var(--c-navy); }
+
+  /* Table */
+  .table-wrap { background: #fff; border: 1px solid var(--c-border); border-radius: var(--radius-lg); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--c-surface); padding: 10px 16px;
+    text-align: left; font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--c-text-2);
+    border-bottom: 1px solid var(--c-border);
+  }
+  tbody td { padding: 11px 16px; border-bottom: 1px solid var(--c-border); font-size: 13px; color: var(--c-text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--c-surface); }
+
+  /* Badge */
+  .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+  .badge-ok   { background: #e6f4ea; color: #1e7e34; }
+  .badge-warn { background: #fff8e1; color: #9e6c00; }
+  .badge-err  { background: #fdecea; color: #b71c1c; }
+  .badge-navy { background: rgba(27,58,75,.1); color: var(--c-navy); }
+
+  /* Form layout */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid.col1 { grid-template-columns: 1fr; }
+  .form-card {
+    background: #fff; border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg); padding: 24px; max-width: 560px;
+  }
+  .form-card h3 { font-size: 14px; font-weight: 500; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--c-border); }
+  .form-actions { display: flex; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--c-border); }
+
+  /* Alert */
+  .alert {
+    padding: 12px 16px; border-radius: var(--radius); font-size: 13px; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .alert-warn { background: #fff8e1; border: 1px solid #ffe082; color: #7a5800; }
+  .alert-info { background: #e8f4fd; border: 1px solid #b3d9f7; color: #1a5276; }
+
+  /* PIN modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.35); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: var(--radius-lg);
+    padding: 32px 28px; width: 340px;
+    animation: fadeUp .2s ease both;
+  }
+  .modal-box h3 { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .modal-box p  { font-size: 12px; color: var(--c-muted); margin-bottom: 20px; }
+  .pin-input {
+    width: 100%; text-align: center; letter-spacing: .5em;
+    font-family: var(--font-mono); font-size: 22px; padding: 12px;
+    border: 1px solid var(--c-border); border-radius: var(--radius);
+    outline: none;
+  }
+  .pin-input:focus { border-color: var(--c-navy); }
+
+  /* Readonly info row */
+  .info-row { display: flex; align-items: baseline; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--c-border); }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .lbl { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--c-muted); width: 130px; flex-shrink: 0; }
+  .info-row .val { font-size: 13px; color: var(--c-text); }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 99px; }
+
+  /* Red accent line top of page */
+  body::before {
+    content: ''; display: block; height: 3px;
+    background: var(--c-red); position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     TELA 1 — LOGIN
+════════════════════════════════════════════ -->
+<div id="s-login" class="screen active">
+  <div class="login-wrap">
+    <div class="login-badge">
+      <div class="emblem"><span>🔥</span></div>
+      <h1>
+        <small>Estado de Alagoas</small>
+        Corpo de Bombeiros Militar
+      </h1>
+    </div>
+
+    <div class="login-card">
+      <h2>Acesso ao sistema</h2>
+      <p>Digite suas credenciais para continuar</p>
+
+      <div class="field">
+        <label>E-mail</label>
+        <input type="email" id="inp-email" placeholder="usuario@cbmal.al.gov.br" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Entrar</button>
+      <div class="login-error" id="login-error">E-mail ou senha incorretos. Verifique e tente novamente.</div>
+    </div>
+
+    <div class="demo-creds">
+      <strong>Credenciais de demonstração</strong>
+      <div style="margin-bottom:8px">
+        <code>admin@cbmal.al.gov.br</code> / <code>admin123</code><br>
+        <button class="demo-btn" onclick="fillDemo('admin@cbmal.al.gov.br','admin123')">Usar admin</button>
+      </div>
+      <div>
+        <code>usuario@cbmal.al.gov.br</code> / <code>user123</code><br>
+        <button class="demo-btn" onclick="fillDemo('usuario@cbmal.al.gov.br','user123')">Usar usuário</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TELA 2 — APP
+════════════════════════════════════════════ -->
+<div id="s-app" class="screen">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sys-name">CBMAL — Gestão</div>
+      <div class="sys-sub">Painel de controle</div>
+    </div>
+    <div class="user-pill">
+      <div class="avatar" id="sb-avatar">--</div>
+      <div class="info">
+        <div class="name" id="sb-name">—</div>
+        <div class="role" id="sb-role">—</div>
+      </div>
+    </div>
+
+    <nav class="nav" id="sidebar-nav"></nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="doLogout()">
+        <span class="icon">↩</span> Sair do sistema
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <h2 id="topbar-title">Dashboard</h2>
+      <span class="breadcrumb" id="topbar-bread">Início</span>
+    </div>
+    <div class="content" id="app-content"></div>
+  </div>
+</div>
+
+<!-- PIN Modal -->
+<div class="modal-overlay" id="pin-modal">
+  <div class="modal-box">
+    <h3>Confirmação de PIN</h3>
+    <p>Esta ação requer o PIN administrativo.</p>
+    <input class="pin-input" type="password" id="pin-input" maxlength="4" placeholder="••••" inputmode="numeric">
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closePin()">Cancelar</button>
+      <button class="btn btn-navy" style="flex:1" onclick="confirmPin()">Confirmar</button>
+    </div>
+    <div id="pin-error" style="color:var(--c-red);font-size:12px;margin-top:10px;display:none">PIN incorreto.</div>
+  </div>
+</div>
+
+<script>
+/* ── DATA ───────────────────────────────────────────── */
+const USERS = {
+  'admin@cbmal.al.gov.br':   { pass:'admin123', name:'Maj. Carlos Admin', role:'admin',   pin:'1234', initials:'CA' },
+  'usuario@cbmal.al.gov.br': { pass:'user123',  name:'Sgt. Ana Usuária',  role:'user',    pin:null,   initials:'AU' },
+};
+
+const DB = {
+  militares: [
+    { id:1, nome:'João da Silva',    patente:'Sargento',  especialidade:'Infantaria',  posto:'Posto Central' },
+    { id:2, nome:'Carlos Souza',     patente:'Tenente',   especialidade:'Comunicações',posto:'Posto Norte'   },
+    { id:3, nome:'Ana Lima',         patente:'Cabo',      especialidade:'Logística',   posto:'Posto Sul'     },
+    { id:4, nome:'Pedro Mendes',     patente:'Capitão',   especialidade:'Blindados',   posto:'Posto Central' },
+    { id:5, nome:'Fernanda Rocha',   patente:'Soldado',   especialidade:'Saúde',       posto:'Posto Leste'   },
+  ],
+  viaturas: [
+    { id:1, placa:'ABC-1234', modelo:'Toyota Hilux',      tipo:'Utilitário', status:'Operacional', posto:'Central' },
+    { id:2, placa:'DEF-5678', modelo:'Ford Ranger',       tipo:'Pickup',     status:'Manutenção',  posto:'Norte'   },
+    { id:3, placa:'GHI-9012', modelo:'Mercedes Sprinter', tipo:'Van',        status:'Operacional', posto:'Sul'     },
+    { id:4, placa:'JKL-3456', modelo:'VW Amarok',         tipo:'Pickup',     status:'Inativa',     posto:'Central' },
+  ],
+  postos: [
+    { id:1, nome:'Posto Central', cidade:'Maceió',    endereco:'Av. Fernandes Lima, 1000' },
+    { id:2, nome:'Posto Norte',   cidade:'Maceió',    endereco:'Rua do Norte, 200'        },
+    { id:3, nome:'Posto Sul',     cidade:'Maceió',    endereco:'Av. Sul, 350'             },
+    { id:4, nome:'Posto Leste',   cidade:'Arapiraca', endereco:'Rua Leste, 80'            },
+  ],
+  almoxarifado: [
+    { id:1, nome:'Colete balístico',     qtd:12, unidade:'unid.', posto:'Central' },
+    { id:2, nome:'Combustível diesel',   qtd:3,  unidade:'litros', posto:'Norte'  },
+    { id:3, nome:'Kit primeiros socorros',qtd:7, unidade:'unid.', posto:'Sul'    },
+    { id:4, nome:'Rádio comunicador',    qtd:1,  unidade:'unid.', posto:'Central'},
+    { id:5, nome:'Luva de proteção',     qtd:20, unidade:'pares', posto:'Leste'  },
+  ],
+  habilitacoes: [
+    { id:1, id_militar:1, militar:'João da Silva', id_viatura:1, viatura:'ABC-1234 — Hilux', data:'2024-03-15' },
+    { id:2, id_militar:2, militar:'Carlos Souza',  id_viatura:3, viatura:'GHI-9012 — Sprinter',data:'2024-01-20'},
+    { id:3, id_militar:4, militar:'Pedro Mendes',  id_viatura:1, viatura:'ABC-1234 — Hilux', data:'2023-11-05' },
+  ],
+  bloqueados: [
+    { id:99, nome:'Usuário Teste', email:'teste@cbmal.al.gov.br', nivel:'Soldado' },
+  ],
+};
+
+/* ── STATE ───────────────────────────────────────────── */
+let currentUser = null;
+let pendingPinAction = null;
+
+/* ── AUTH ─────────────────────────────────────────────── */
+function fillDemo(e, p) {
+  document.getElementById('inp-email').value = e;
+  document.getElementById('inp-pass').value  = p;
+}
+
+function doLogin() {
+  const email = document.getElementById('inp-email').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const err   = document.getElementById('login-error');
+  const u = USERS[email];
+  if (u && u.pass === pass) {
+    err.classList.remove('show');
+    currentUser = { email, ...u };
+    showApp();
+  } else {
+    err.classList.add('show');
+  }
+}
+document.getElementById('inp-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('s-app').classList.remove('active');
+  document.getElementById('s-login').classList.add('active');
+  document.getElementById('inp-pass').value = '';
+}
+
+/* ── APP SHELL ──────────────────────────────────────────── */
+function showApp() {
+  document.getElementById('s-login').classList.remove('active');
+  document.getElementById('s-app').classList.add('active');
+
+  document.getElementById('sb-name').textContent    = currentUser.name;
+  document.getElementById('sb-role').textContent    = currentUser.role === 'admin' ? 'Administrador' : 'Consultor';
+  document.getElementById('sb-avatar').textContent  = currentUser.initials;
+
+  buildNav();
+  navigate('dashboard');
+}
+
+const ADMIN_NAV = [
+  { section: 'Principal', items: [
+    { id:'dashboard', icon:'⊞', label:'Dashboard' },
+  ]},
+  { section: 'Gestão', items: [
+    { id:'militares',    icon:'👤', label:'Militares'    },
+    { id:'viaturas',     icon:'🚒', label:'Viaturas'     },
+    { id:'postos',       icon:'📍', label:'Postos'       },
+    { id:'almoxarifado', icon:'📦', label:'Almoxarifado' },
+    { id:'habilitacoes', icon:'📋', label:'Habilitações' },
+  ]},
+  { section: 'Administração', items: [
+    { id:'bloqueios',    icon:'🔒', label:'Bloqueios'    },
+    { id:'senha',        icon:'🔑', label:'Minha Senha'  },
+  ]},
+];
+const USER_NAV = [
+  { section: 'Principal', items: [
+    { id:'dashboard', icon:'⊞', label:'Dashboard' },
+  ]},
+  { section: 'Consulta', items: [
+    { id:'militares',    icon:'👤', label:'Militares'    },
+    { id:'viaturas',     icon:'🚒', label:'Viaturas'     },
+    { id:'postos',       icon:'📍', label:'Postos'       },
+    { id:'almoxarifado', icon:'📦', label:'Almoxarifado' },
+    { id:'habilitacoes', icon:'📋', label:'Habilitações' },
+  ]},
+  { section: 'Conta', items: [
+    { id:'senha', icon:'🔑', label:'Minha Senha' },
+  ]},
+];
+
+function buildNav() {
+  const nav = document.getElementById('sidebar-nav');
+  const cfg = currentUser.role === 'admin' ? ADMIN_NAV : USER_NAV;
+  nav.innerHTML = cfg.map(sec => `
+    <div class="nav-section">
+      <div class="nav-section-label">${sec.section}</div>
+      ${sec.items.map(it => `
+        <button class="nav-item" id="nav-${it.id}" onclick="navigate('${it.id}')">
+          <span class="icon">${it.icon}</span>${it.label}
+        </button>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+const PAGE_TITLES = {
+  dashboard:'Dashboard', militares:'Militares', viaturas:'Viaturas',
+  postos:'Postos', almoxarifado:'Almoxarifado', habilitacoes:'Habilitações',
+  bloqueios:'Gestão de Bloqueios', senha:'Minha Senha',
+};
+
+function navigate(id) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const btn = document.getElementById('nav-'+id);
+  if (btn) btn.classList.add('active');
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[id] || id;
+  document.getElementById('topbar-bread').textContent = 'Início › ' + (PAGE_TITLES[id]||id);
+  const content = document.getElementById('app-content');
+  content.style.animation = 'none';
+  content.offsetHeight;
+  content.style.animation = '';
+  content.innerHTML = renderPage(id);
+}
+
+/* ── PAGES ──────────────────────────────────────────────── */
+function renderPage(id) {
+  const isAdmin = currentUser.role === 'admin';
+  switch(id) {
+    case 'dashboard':    return pageDashboard();
+    case 'militares':    return pageMilitares(isAdmin);
+    case 'viaturas':     return pageViaturas(isAdmin);
+    case 'postos':       return pagePostos(isAdmin);
+    case 'almoxarifado': return pageAlmoxarifado(isAdmin);
+    case 'habilitacoes': return pageHabilitacoes(isAdmin);
+    case 'bloqueios':    return isAdmin ? pageBloqueios() : '<p>Sem permissão.</p>';
+    case 'senha':        return pageSenha();
+    default: return '<p>Página não encontrada.</p>';
+  }
+}
+
+/* Dashboard */
+function pageDashboard() {
+  const isAdmin = currentUser.role === 'admin';
+  const opOk = DB.viaturas.filter(v=>v.status==='Operacional').length;
+  const lowStock = DB.almoxarifado.filter(i=>i.qtd<=3).length;
+  return `
+    <div class="stat-grid">
+      <div class="stat-card accent">
+        <div class="s-label">Militares</div>
+        <div class="s-val">${DB.militares.length}</div>
+        <div class="s-sub">${DB.postos.length} postos ativos</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Viaturas</div>
+        <div class="s-val">${DB.viaturas.length}</div>
+        <div class="s-sub">${opOk} operacionais</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Itens estoque</div>
+        <div class="s-val">${DB.almoxarifado.reduce((a,i)=>a+i.qtd,0)}</div>
+        <div class="s-sub">${lowStock} com estoque baixo</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Habilitações</div>
+        <div class="s-val">${DB.habilitacoes.length}</div>
+        <div class="s-sub">vínculos registrados</div>
+      </div>
+    </div>
+    ${lowStock>0 ? `<div class="alert alert-warn">⚠ ${lowStock} item(ns) com quantidade crítica no almoxarifado.</div>`:''}
+    <div class="alert alert-info" style="margin-bottom:28px">
+      Bem-vindo, <strong>${currentUser.name}</strong>. 
+      ${isAdmin ? 'Você tem acesso administrativo completo.' : 'Você tem acesso de consulta ao sistema.'}
+    </div>
+    <div class="section-hdr"><h3>Status das viaturas</h3></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Placa</th><th>Modelo</th><th>Tipo</th><th>Status</th><th>Posto</th></tr></thead>
+        <tbody>
+          ${DB.viaturas.map(v=>`<tr>
+            <td><span style="font-family:var(--font-mono);font-size:12px">${v.placa}</span></td>
+            <td>${v.modelo}</td><td>${v.tipo}</td>
+            <td>${badgeStatus(v.status)}</td>
+            <td>${v.posto}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* Militares */
+function pageMilitares(isAdmin) {
+  return `
+    <div class="section-hdr">
+      <h3>${isAdmin ? 'Gerenciar Militares' : 'Consultar Militares'}</h3>
+      ${isAdmin ? `<button class="btn btn-navy btn-sm" onclick="showFormMilitar()">+ Cadastrar</button>` : ''}
+    </div>
+    <div class="search-bar">
+      <input type="text" id="srch-mil" placeholder="Buscar por nome, patente ou posto…" oninput="filterMilitares()">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Nome</th><th>Patente</th><th>Especialidade</th><th>Posto</th>${isAdmin?'<th></th>':''}</tr></thead>
+        <tbody id="tbody-mil">
+          ${renderMilitares(isAdmin)}
+        </tbody>
+      </table>
+    </div>
+    <div id="form-militar" style="display:none;margin-top:24px"></div>
+  `;
+}
+function renderMilitares(isAdmin, filter='') {
+  const list = DB.militares.filter(m =>
+    !filter || m.nome.toLowerCase().includes(filter) ||
+    m.patente.toLowerCase().includes(filter) || m.posto.toLowerCase().includes(filter)
+  );
+  if (!list.length) return `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--c-muted)">Nenhum militar encontrado.</td></tr>`;
+  return list.map(m => `<tr>
+    <td><span style="font-family:var(--font-mono);font-size:12px;color:var(--c-muted)">${m.id}</span></td>
+    <td>${m.nome}</td><td>${m.patente}</td><td>${m.especialidade}</td>
+    <td><span class="badge badge-navy">${m.posto}</span></td>
+    ${isAdmin ? `<td><button class="btn btn-ghost btn-sm" onclick="editMilitar(${m.id})">Editar</button></td>` : ''}
+  </tr>`).join('');
+}
+function filterMilitares() {
+  const f = document.getElementById('srch-mil')?.value.toLowerCase()||'';
+  const isAdmin = currentUser.role==='admin';
+  document.getElementById('tbody-mil').innerHTML = renderMilitares(isAdmin, f);
+}
+function showFormMilitar(id=null) {
+  const m = id ? DB.militares.find(x=>x.id===id) : null;
+  const box = document.getElementById('form-militar');
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div class="form-card">
+      <h3>${m ? 'Editar Militar' : 'Cadastrar Militar'}</h3>
+      <div class="form-grid">
+        <div class="field"><label>Nome completo</label><input type="text" id="f-nome" value="${m?m.nome:''}"></div>
+        <div class="field"><label>Patente</label>
+          <input type="text" id="f-patente" value="${m?m.patente:''}" list="patentes-list">
+          <datalist id="patentes-list">
+            <option>Soldado</option><option>Cabo</option><option>Sargento</option>
+            <option>Subtenente</option><option>Tenente</option><option>Capitão</option>
+            <option>Major</option><option>Coronel</option><option>General</option>
+          </datalist>
+        </div>
+        <div class="field"><label>Especialidade</label><input type="text" id="f-esp" value="${m?m.especialidade:''}"></div>
+        <div class="field"><label>Posto</label>
+          <input type="text" id="f-posto" value="${m?m.posto:''}" list="postos-list">
+          <datalist id="postos-list">${DB.postos.map(p=>`<option>${p.nome}</option>`).join('')}</datalist>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('form-militar').style.display='none'">Cancelar</button>
+        <button class="btn btn-navy" onclick="saveMilitar(${id||'null'})">Salvar</button>
+      </div>
+    </div>
+  `;
+  box.scrollIntoView({ behavior:'smooth' });
+}
+function editMilitar(id) { requirePin(()=>showFormMilitar(id)); }
+function saveMilitar(id) {
+  const nome = document.getElementById('f-nome').value.trim();
+  const patente = document.getElementById('f-patente').value.trim();
+  const esp = document.getElementById('f-esp').value.trim();
+  const posto = document.getElementById('f-posto').value.trim();
+  if (!nome||!patente) { alert('Nome e patente são obrigatórios.'); return; }
+  if (id) {
+    const m = DB.militares.find(x=>x.id===id);
+    Object.assign(m, {nome,patente,especialidade:esp,posto});
+  } else {
+    DB.militares.push({id:DB.militares.length+1,nome,patente,especialidade:esp,posto});
+  }
+  navigate('militares');
+}
+
+/* Viaturas */
+function pageViaturas(isAdmin) {
+  return `
+    <div class="section-hdr">
+      <h3>${isAdmin?'Gerenciar Viaturas':'Consultar Viaturas'}</h3>
+      ${isAdmin?`<button class="btn btn-navy btn-sm" onclick="showFormViatura()">+ Cadastrar</button>`:''}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Placa</th><th>Modelo</th><th>Tipo</th><th>Status</th><th>Posto</th>${isAdmin?'<th></th>':''}</tr></thead>
+        <tbody>
+          ${DB.viaturas.map(v=>`<tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--c-muted)">${v.id}</td>
+            <td><span style="font-family:var(--font-mono);font-size:12px">${v.placa}</span></td>
+            <td>${v.modelo}</td><td>${v.tipo}</td>
+            <td>${badgeStatus(v.status)}</td><td>${v.posto}</td>
+            ${isAdmin?`<td><button class="btn btn-ghost btn-sm" onclick="editViatura(${v.id})">Editar</button></td>`:''}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div id="form-viatura" style="display:none;margin-top:24px"></div>
+  `;
+}
+function editViatura(id) {
+  requirePin(()=>{
+    const v = DB.viaturas.find(x=>x.id===id);
+    const box = document.getElementById('form-viatura');
+    box.style.display='block';
+    box.innerHTML=`
+      <div class="form-card">
+        <h3>Editar Viatura</h3>
+        <div class="form-grid">
+          <div class="field"><label>Placa</label><input type="text" id="fv-placa" value="${v.placa}"></div>
+          <div class="field"><label>Modelo</label><input type="text" id="fv-modelo" value="${v.modelo}"></div>
+          <div class="field"><label>Tipo</label><input type="text" id="fv-tipo" value="${v.tipo}"></div>
+          <div class="field"><label>Status</label>
+            <input type="text" id="fv-status" value="${v.status}" list="status-list">
+            <datalist id="status-list"><option>Operacional</option><option>Manutenção</option><option>Inativa</option></datalist>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-ghost" onclick="document.getElementById('form-viatura').style.display='none'">Cancelar</button>
+          <button class="btn btn-navy" onclick="saveViatura(${id})">Salvar</button>
+        </div>
+      </div>`;
+    box.scrollIntoView({behavior:'smooth'});
+  });
+}
+function saveViatura(id) {
+  const v = DB.viaturas.find(x=>x.id===id);
+  v.placa   = document.getElementById('fv-placa').value.trim();
+  v.modelo  = document.getElementById('fv-modelo').value.trim();
+  v.tipo    = document.getElementById('fv-tipo').value.trim();
+  v.status  = document.getElementById('fv-status').value.trim();
+  navigate('viaturas');
+}
+
+/* Postos */
+function pagePostos(isAdmin) {
+  return `
+    <div class="section-hdr">
+      <h3>${isAdmin?'Gerenciar Postos':'Consultar Postos'}</h3>
+      ${isAdmin?`<button class="btn btn-navy btn-sm">+ Cadastrar</button>`:''}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Nome</th><th>Cidade</th><th>Endereço</th></tr></thead>
+        <tbody>
+          ${DB.postos.map(p=>`<tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--c-muted)">${p.id}</td>
+            <td><strong>${p.nome}</strong></td><td>${p.cidade}</td><td>${p.endereco}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* Almoxarifado */
+function pageAlmoxarifado(isAdmin) {
+  const lowItems = DB.almoxarifado.filter(i=>i.qtd<=3);
+  return `
+    ${lowItems.length ? `<div class="alert alert-warn">⚠ ${lowItems.length} item(ns) com estoque crítico: ${lowItems.map(i=>i.nome).join(', ')}.</div>` : ''}
+    <div class="section-hdr">
+      <h3>${isAdmin?'Gerenciar Almoxarifado':'Consultar Almoxarifado'}</h3>
+      ${isAdmin?`<button class="btn btn-navy btn-sm">+ Cadastrar item</button>`:''}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Item</th><th>Quantidade</th><th>Unidade</th><th>Posto</th></tr></thead>
+        <tbody>
+          ${DB.almoxarifado.map(i=>`<tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--c-muted)">${i.id}</td>
+            <td>${i.nome}</td>
+            <td><span style="font-family:var(--font-mono);font-weight:500;color:${i.qtd<=3?'var(--c-red)':'var(--c-text)'}">${i.qtd}</span></td>
+            <td>${i.unidade}</td><td>${i.posto}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* Habilitações */
+function pageHabilitacoes(isAdmin) {
+  return `
+    <div class="section-hdr">
+      <h3>${isAdmin?'Gerenciar Habilitações':'Consultar Habilitações'}</h3>
+      ${isAdmin?`<button class="btn btn-navy btn-sm">+ Registrar</button>`:''}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Militar</th><th>Viatura</th><th>Data</th>${isAdmin?'<th></th>':''}</tr></thead>
+        <tbody>
+          ${DB.habilitacoes.map(h=>`<tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--c-muted)">${h.id}</td>
+            <td>${h.militar}</td><td>${h.viatura}</td>
+            <td><span style="font-family:var(--font-mono);font-size:12px">${h.data}</span></td>
+            ${isAdmin?`<td><button class="btn btn-ghost btn-sm">Excluir</button></td>`:''}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* Bloqueios (admin only) */
+function pageBloqueios() {
+  return `
+    <div class="alert alert-info" style="margin-bottom:20px">Usuários com 3 tentativas de login incorretas são bloqueados automaticamente.</div>
+    <div class="section-hdr"><h3>Usuários Bloqueados</h3></div>
+    ${DB.bloqueados.length===0
+      ? `<div class="table-wrap" style="padding:32px;text-align:center;color:var(--c-muted)">Nenhum usuário bloqueado no momento.</div>`
+      : `<div class="table-wrap"><table>
+          <thead><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Nível</th><th></th></tr></thead>
+          <tbody>
+            ${DB.bloqueados.map(u=>`<tr>
+              <td style="font-family:var(--font-mono);font-size:12px;color:var(--c-muted)">${u.id}</td>
+              <td>${u.nome}</td><td>${u.email}</td>
+              <td><span class="badge badge-err">Bloqueado</span></td>
+              <td><button class="btn btn-ghost btn-sm" onclick="desbloquear(${u.id})">Desbloquear</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>`
+    }
+  `;
+}
+function desbloquear(id) {
+  requirePin(()=>{
+    DB.bloqueados = DB.bloqueados.filter(u=>u.id!==id);
+    navigate('bloqueios');
+  });
+}
+
+/* Senha */
+function pageSenha() {
+  return `
+    <div class="form-card">
+      <h3>Alterar minha senha</h3>
+      <div class="field"><label>Nova senha</label><input type="password" id="ns1" placeholder="••••••••"></div>
+      <div class="field"><label>Confirmar nova senha</label><input type="password" id="ns2" placeholder="••••••••"></div>
+      <div id="senha-msg" style="display:none;margin-top:10px;font-size:13px"></div>
+      <div class="form-actions">
+        <button class="btn btn-navy" onclick="salvarSenha()">Salvar senha</button>
+      </div>
+    </div>
+  `;
+}
+function salvarSenha() {
+  const n1 = document.getElementById('ns1').value;
+  const n2 = document.getElementById('ns2').value;
+  const msg = document.getElementById('senha-msg');
+  msg.style.display='block';
+  if (!n1) { msg.style.color='var(--c-red)'; msg.textContent='Digite a nova senha.'; return; }
+  if (n1!==n2) { msg.style.color='var(--c-red)'; msg.textContent='As senhas não coincidem.'; return; }
+  msg.style.color='#1e7e34'; msg.textContent='Senha alterada com sucesso!';
+  document.getElementById('ns1').value='';
+  document.getElementById('ns2').value='';
+}
+
+/* ── PIN ─────────────────────────────────────────────── */
+function requirePin(action) {
+  pendingPinAction = action;
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-error').style.display='none';
+  document.getElementById('pin-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('pin-input').focus(),100);
+}
+function closePin() {
+  document.getElementById('pin-modal').classList.remove('show');
+  pendingPinAction = null;
+}
+function confirmPin() {
+  const pin = document.getElementById('pin-input').value;
+  if (pin === currentUser.pin) {
+    closePin();
+    if (pendingPinAction) pendingPinAction();
+  } else {
+    document.getElementById('pin-error').style.display='block';
+    document.getElementById('pin-input').value='';
+    document.getElementById('pin-input').focus();
+  }
+}
+document.getElementById('pin-input').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmPin(); });
+
+/* ── HELPERS ─────────────────────────────────────────── */
+function badgeStatus(s) {
+  const cls = s==='Operacional' ? 'badge-ok' : s==='Manutenção' ? 'badge-warn' : 'badge-err';
+  return `<span class="badge ${cls}">${s}</span>`;
+}
+</script>
+</body>
+</html>
