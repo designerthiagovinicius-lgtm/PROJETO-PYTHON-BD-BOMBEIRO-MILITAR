@@ -1,21 +1,12 @@
 from config.conexao import conectar
 from config.cryspt import criptografar_pin, checar_pin # Manter para PINs
 from Utils.auth import hash_password # Importar da nova localização Utils/auth.py
+from config.validadores import validar_nome, validar_id_numerico, validar_placa, validar_quantidade, validar_email
 
-def validar_nome(nome: str, min_chars: int = 3) -> bool:
-    """Valida se o nome tem o mínimo de caracteres e não está vazio."""
-    if not nome or len(nome.strip()) < min_chars:
-        print(f"Erro: O nome deve ter pelo menos {min_chars} caracteres e não pode ser vazio.")
-        return False
-    return True
-
-
-def validar_email(email: str) -> bool:
-    """Valida se o email não está vazio."""
-    if not email or len(email.strip()) == 0:
-        print("Erro: O email não pode estar vazio.")
-        return False
-    return True
+#comentario: Este código é responsável por gerenciar os usuários do sistema, incluindo funções para criar novos usuários, 
+# desbloquear usuários bloqueados, buscar usuários por ID e listar todos os usuários. Ele inclui validações para garantir 
+# que os dados inseridos sejam corretos e seguros, como validação de nome e email. Além disso, ele verifica a existência 
+# de colunas de segurança no banco de dados para garantir compatibilidade com versões anteriores do banco.
 
 
 def _coluna_existe(cursor, tabela: str, coluna: str) -> bool:

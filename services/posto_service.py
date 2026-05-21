@@ -1,29 +1,10 @@
 from config.conexao import conectar
-
+from Utils.database import encontrar_menor_id_disponivel
+from config.validadores import validar_nome, validar_id_numerico, validar_placa, validar_quantidade, validar_telefone
 # Este código é responsável por gerenciar os postos/unidades operacionais cadastrados no sistema, 
 # incluindo funções para cadastrar novos postos, listar postos, obter detalhes de um posto específico, deletar e editar postos. 
 # Ele inclui validações para garantir que os dados inseridos sejam corretos e seguros, como validação de nome e ID numérico.
 
-
-
-def validar_nome(nome: str, min_chars: int = 3) -> bool:
-    """Valida se o nome tem o mínimo de caracteres e não está vazio."""
-    if not nome or len(nome.strip()) < min_chars:
-        print(f"Erro: O nome deve ter pelo menos {min_chars} caracteres e não pode ser vazio.")
-        return False
-    return True
-
-
-def validar_telefone(telefone: str) -> bool:
-    """Valida se o telefone contém apenas números e tem entre 8 e 15 dígitos."""
-    if not telefone:
-        return True  # Telefone pode ser vazio
-    
-    telefone_limpo = ''.join(filter(str.isdigit, telefone))
-    if len(telefone_limpo) < 8 or len(telefone_limpo) > 15:
-        print("Erro: O telefone deve ter entre 8 e 15 dígitos.")
-        return False
-    return True
 
 
 def cadastrar_posto(nome_posto, endereco, telefone):
@@ -37,13 +18,14 @@ def cadastrar_posto(nome_posto, endereco, telefone):
         return False
     
     try:
+        id_disponivel = encontrar_menor_id_disponivel("Posto", "ID_Posto")
         conn = conectar()
         cursor = conn.cursor()
         sql = """
-        INSERT INTO Posto (Nome_Posto, Endereco, Telefone)
-        VALUES (%s, %s, %s)
+        INSERT INTO Posto (ID_Posto, Nome_Posto, Endereco, Telefone)
+        VALUES (%s, %s, %s, %s)
         """
-        cursor.execute(sql, (nome_posto, endereco, telefone))
+        cursor.execute(sql, (id_disponivel, nome_posto, endereco, telefone))
         conn.commit()
         print("Posto cadastrado com sucesso!")
         return True

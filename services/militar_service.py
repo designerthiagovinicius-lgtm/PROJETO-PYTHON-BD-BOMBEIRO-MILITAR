@@ -1,23 +1,9 @@
 from config.conexao import conectar
-
+from Utils.database import encontrar_menor_id_disponivel
+from config.validadores import validar_nome, validar_id_numerico, validar_placa, validar_quantidade
 # Este código é responsável por gerenciar os militares cadastrados no sistema, 
 # incluindo funções para cadastrar novos militares, listar militares, obter detalhes de um militar específico, 
 # editar e excluir militares. Ele inclui validações para garantir que os dados inseridos sejam corretos e seguros.
-def validar_nome(nome: str, min_chars: int = 3) -> bool:
-    """Valida se o nome tem o mínimo de caracteres e não está vazio."""
-    if not nome or len(nome.strip()) < min_chars:
-        print(f"Erro: O nome deve ter pelo menos {min_chars} caracteres e não pode ser vazio.")
-        return False
-    return True
-
-
-def validar_id_numerico(valor):
-    """Valida se um valor é um ID numérico válido."""
-    try:
-        return int(valor)
-    except (ValueError, TypeError):
-        print("Erro: O ID deve ser um número inteiro.")
-        return None
 
 
 def cadastrar_militar(nome, patente, especialidade, id_posto):
@@ -32,13 +18,14 @@ def cadastrar_militar(nome, patente, especialidade, id_posto):
         return False
     
     try:
+        id_disponivel = encontrar_menor_id_disponivel("Militar", "ID_Militar")
         conn = conectar()
         cursor = conn.cursor()
         sql = """
-        INSERT INTO Militar (Nome, Patente, Especialidade, ID_Posto)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO Militar (ID_Militar, Nome, Patente, Especialidade, ID_Posto)
+        VALUES (%s, %s, %s, %s, %s)
         """
-        cursor.execute(sql, (nome, patente, especialidade, id_posto_validado))
+        cursor.execute(sql, (id_disponivel, nome, patente, especialidade, id_posto_validado))
         conn.commit()
         print("Militar cadastrado com sucesso!")
         return True

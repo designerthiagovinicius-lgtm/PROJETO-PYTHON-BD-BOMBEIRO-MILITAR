@@ -1,8 +1,9 @@
-"""
-Módulo de validadores reutilizáveis para o sistema de gestão militar.
-Fornece funções de validação para garantir a integridade dos dados.
-"""
-
+#comentario: Este código é um módulo de validação que contém várias funções para validar diferentes tipos de dados, 
+# como nomes, emails, telefones, placas de veículos, IDs numéricos, quantidades, datas e PINs. Essas funções são usadas 
+# em outros serviços do sistema para garantir que os dados inseridos pelos usuários sejam corretos e seguros antes de 
+# serem processados ou armazenados no banco de dados. Cada função retorna um valor booleano indicando se a validação foi 
+# bem-sucedida ou não, e imprime mensagens de erro específicas quando a validação falha. Essas validações são essenciais 
+# para manter a integridade dos dados e evitar erros ou vulnerabilidades no sistema de gestão militar.    
 
 def validar_nome(nome: str, min_chars: int = 3, max_chars: int = 100) -> bool:
     """

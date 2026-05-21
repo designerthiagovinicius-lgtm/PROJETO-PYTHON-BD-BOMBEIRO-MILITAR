@@ -4,6 +4,14 @@ from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
 
+#comentario: Este código é responsável por enviar e-mails relacionados à segurança de contas, 
+#como recuperação de senha, notificações de alteração de senha, alertas de bloqueio de conta
+#e relatórios para administradores. Ele utiliza as configurações de e-mail definidas em variáveis 
+#de ambiente e inclui uma função interna para reduzir a repetição de código no envio de e-mails.
+
+
+
+
 load_dotenv()
 
 def _enviar_email(to_email: str, subject: str, body: str) -> bool:
@@ -34,7 +42,7 @@ def _enviar_email(to_email: str, subject: str, body: str) -> bool:
 
 def send_password_reset_email(recipient_email: str, new_password: str) -> bool:
     subject = "Recuperação de Senha - Novo Acesso"
-    body = f"Olá!\n\nSua nova senha temporária é: {new_password}\n\nRecomendamos alterar após o primeiro login."
+    body = f"Olá!\n\nSua nova senha temporária é: {new_password}\n\nRecomendamos alterar após o primeiro login.\n\nAtenciosamente, admin"
     return _enviar_email(recipient_email, subject, body)
 
 def send_password_change_notification(recipient_email: str) -> bool:
@@ -59,5 +67,5 @@ def send_admin_blocked_report(admin_email: str, usuario_bloqueado: str, lista_bl
     
     lista_str = "\n".join([f"- {u[1]} ({u[2]}) - {u[3]}" for u in lista_bloqueados])
     
-    body = f"Olá Administrador,\n\nO usuário {usuario_bloqueado} acabou de ser bloqueado por excesso de tentativas.\n\nLista atual de usuários bloqueados:\n{lista_str}\n\nPor favor, verifique o painel administrativo."
+    body = f"Olá Administrador,\n\nO usuário {usuario_bloqueado} acabou de ser bloqueado por excesso de tentativas.\n\nLista atual de usuários bloqueados:\n{lista_str}\n\nPor favor, verifique o painel administrativo ."
     return _enviar_email(admin_email, subject, body)

@@ -1,13 +1,12 @@
 from config.conexao import conectar
+from Utils.database import encontrar_menor_id_disponivel
+from config.validadores import validar_nome, validar_id_numerico, validar_placa, validar_quantidade
 
-
-def validar_nome(nome: str, min_chars: int = 3) -> bool:
-    """Valida se o nome tem o mínimo de caracteres e não está vazio."""
-    if not nome or len(nome.strip()) < min_chars:
-        print(f"Erro: O nome deve ter pelo menos {min_chars} caracteres e não pode ser vazio.")
-        return False
-    return True
-
+# comentario: Este código é responsável por gerenciar o almoxarifado de um sistema de gestão militar,
+# incluindo funções para cadastrar itens, listar itens por posto, listar todos os itens, obter detalhes de um item, 
+# editar e excluir itens. Ele inclui validações para garantir que os dados inseridos sejam corretos e seguros.  
+# As funções de listagem permitem buscas por ID, nome do item ou nome do posto, facilitando a localização de itens
+# específicos no almoxarifado. 
 
 def validar_quantidade(quantidade):
     """Valida se a quantidade é um número inteiro positivo."""
@@ -47,13 +46,14 @@ def cadastrar_item(nome_item, quantidade, unidade_medida, id_posto):
         return False
     
     try:
+        id_disponivel = encontrar_menor_id_disponivel("Almoxarifado", "ID_Item")
         conn = conectar()
         cursor = conn.cursor()
         sql = """
-        INSERT INTO Almoxarifado (Nome_Item, Quantidade, Unidade_Medida, ID_Posto)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO Almoxarifado (ID_Item, Nome_Item, Quantidade, Unidade_Medida, ID_Posto)
+        VALUES (%s, %s, %s, %s, %s)
         """
-        cursor.execute(sql, (nome_item, qtd_validada, unidade_medida, id_posto_validado))
+        cursor.execute(sql, (id_disponivel, nome_item, qtd_validada, unidade_medida, id_posto_validado))
         conn.commit()
         print("Item cadastrado no almoxarifado!")
         return True

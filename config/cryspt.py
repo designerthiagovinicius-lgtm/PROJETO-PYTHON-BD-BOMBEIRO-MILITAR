@@ -1,16 +1,11 @@
 # config/cryspt.py
 import bcrypt
-
-def criptografar(password):
-    # Esta função agora deve ser removida ou renomeada para evitar conflito
-    # e garantir que auth.hash_password seja usada para senhas de usuário.
-    # Se for para PINs, renomeie para criptografar_pin_legacy ou similar.
-    pass # Ou remova completamente se auth.hash_password for o padrão
-
-def checar_password(password, hashed):
-    # Esta função agora deve ser removida ou renomeada para evitar conflito
-    # e garantir que auth.check_password seja usada para senhas de usuário.
-    pass # Ou remova completamente se auth.check_password for o padrão
+# comentario: Este código é responsável por criptografar e verificar PINs usando a biblioteca bcrypt. 
+# Ele inclui duas funções principais:
+# - criptografar_pin(pin): Recebe um PIN em texto simples, criptografado usando bcrypt e retorna o hash resultante.
+# - checar_pin(pin, hashed_pin): Recebe um PIN em texto simples e um hash bcrypt, e verifica se o PIN corresponde ao hash, 
+# retornando True ou False. Essas funções são utilizadas para garantir a segurança dos PINs armazenados no banco de dados, 
+# especialmente para operações administrativas sensíveis, como desbloqueio de usuários ou alterações de senha.
 
 def criptografar_pin(pin):
     """

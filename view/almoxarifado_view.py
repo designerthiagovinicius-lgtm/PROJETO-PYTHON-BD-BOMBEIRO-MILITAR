@@ -1,6 +1,15 @@
 from services import almoxarifado_service
 from view.utils import verificar_pin_admin
 
+#comentario: Este código é responsável por exibir o painel administrativo do sistema de gestão militar, 
+# permitindo que os usuários com permissão de administrador acessem diferentes funcionalidades para gerenciar 
+# militares, viaturas, postos, almoxarifado e habilitações. Ele também inclui uma seção específica para a gestão 
+# de bloqueios de usuários, onde o administrador pode visualizar os usuários bloqueados, buscar por nome e desbloquear 
+# usuários mediante auditoria. O painel é acessível apenas para usuários autenticados e com as permissões adequadas, 
+# garantindo a segurança do sistema. 
+
+
+
 def menu_almoxarifado(user_auth):
     while True:
         print("\n--- GESTÃO DE ALMOXARIFADO ---")

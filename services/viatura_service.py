@@ -1,28 +1,13 @@
 from config.conexao import conectar
+from Utils.database import encontrar_menor_id_disponivel
+from config.validadores import validar_nome, validar_id_numerico, validar_placa, validar_quantidade
 
-# Este código é responsável por gerenciar as viaturas operacionais cadastrados no sistema, 
-# incluindo funções para cadastrar novas viaturas, listar viaturas, obter detalhes de uma viatura específica, deletar e editar viaturas. 
+
+# comentario: Este código é responsável por gerenciar as viaturas cadastradas no sistema, incluindo funções para
+# cadastrar novas viaturas, listar viaturas, obter detalhes de uma viatura específica, editar e excluir viaturas. 
 # Ele inclui validações para garantir que os dados inseridos sejam corretos e seguros, como validação de placa e ID numérico.
-def validar_placa(placa: str) -> bool:
-    """Valida se a placa não está vazia e tem entre 6 e 10 caracteres."""
-    if not placa or len(placa.strip()) == 0:
-        print("Erro: A placa não pode estar vazia.")
-        return False
-    
-    if len(placa.strip()) < 6 or len(placa.strip()) > 10:
-        print("Erro: A placa deve ter entre 6 e 10 caracteres.")
-        return False
-    
-    return True
-
-
-def validar_id_numerico(valor):
-    """Valida se um valor é um ID numérico válido."""
-    try:
-        return int(valor)
-    except (ValueError, TypeError):
-        print("Erro: O ID deve ser um número inteiro.")
-        return None
+# As funções de listagem permitem buscas por ID, placa, modelo ou nome do posto, facilitando a localização de
+# viaturas específicas no sistema.
 
 
 def cadastrar_viatura(placa, modelo, tipo, status, id_posto):
@@ -37,13 +22,14 @@ def cadastrar_viatura(placa, modelo, tipo, status, id_posto):
         return False
     
     try:
+        id_disponivel = encontrar_menor_id_disponivel("Viatura", "ID_Viatura")
         conn = conectar()
         cursor = conn.cursor()
         sql = """
-        INSERT INTO Viatura (Placa, Modelo, Tipo, Status, ID_Posto)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO Viatura (ID_Viatura, Placa, Modelo, Tipo, Status, ID_Posto)
+        VALUES (%s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(sql, (placa, modelo, tipo, status, id_posto_validado))
+        cursor.execute(sql, (id_disponivel, placa, modelo, tipo, status, id_posto_validado))
         conn.commit()
         print("Viatura cadastrada com sucesso!")
         return True

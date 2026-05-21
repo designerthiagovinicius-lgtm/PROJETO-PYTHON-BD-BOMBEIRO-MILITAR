@@ -1,17 +1,11 @@
 from config.conexao import conectar
+from Utils.database import encontrar_menor_id_disponivel
 from datetime import datetime
+from config.validadores import validar_nome, validar_id_numerico, validar_placa, validar_quantidade, validar_data
 
 # Este código é responsável por gerenciar as habilitações de militares para condução de viaturas, 
 # incluindo funções para associar militares a viaturas, listar habilitações, obter detalhes de uma habilitação, 
 # editar e excluir habilitações. Ele inclui validações para garantir que os dados inseridos sejam corretos e seguros.
-def validar_data(data_str: str) -> bool:
-    """Valida se a data está em formato válido (YYYY-MM-DD)."""
-    try:
-        datetime.strptime(data_str, '%Y-%m-%d')
-        return True
-    except ValueError:
-        print("Erro: A data deve estar no formato YYYY-MM-DD (ex: 2024-12-31).")
-        return False
 
 
 def validar_id_numerico(valor):
@@ -39,13 +33,14 @@ def associar_habilitacao(id_militar, id_viatura, data_habilitacao):
         return False
     
     try:
+        id_disponivel = encontrar_menor_id_disponivel("HabilitacaoViatura", "ID_Habilitacao")
         conn = conectar()
         cursor = conn.cursor()
         sql = """
-        INSERT INTO HabilitacaoViatura (ID_Militar, ID_Viatura, Data_Habilitacao)
-        VALUES (%s, %s, %s)
+        INSERT INTO HabilitacaoViatura (ID_Habilitacao, ID_Militar, ID_Viatura, Data_Habilitacao)
+        VALUES (%s, %s, %s, %s)
         """
-        cursor.execute(sql, (id_militar_validado, id_viatura_validado, data_habilitacao))
+        cursor.execute(sql, (id_disponivel, id_militar_validado, id_viatura_validado, data_habilitacao))
         conn.commit()
         print("Habilitação registrada com sucesso!")
         return True

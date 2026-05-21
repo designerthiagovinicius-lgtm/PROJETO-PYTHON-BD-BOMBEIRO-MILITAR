@@ -171,3 +171,46 @@ def incrementar_trocas_senha(email: str):
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
+
+TABELAS_PERMITIDAS = {"Militar", "Viatura", "Almoxarifado", "Posto"}
+
+def encontrar_menor_id_disponivel(tabela: str, coluna_id: str) -> int:
+    if tabela not in TABELAS_PERMITIDAS:
+        raise ValueError(f"Tabela não permitida: {tabela}")
+    """
+    Encontra o menor ID disponível (buraco) em uma tabela.
+    Se não houver buracos, retorna o próximo ID sequencial.
+    """
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        if not conn: return 1
+        cursor = conn.cursor()
+        
+        # Verifica se o ID 1 está disponível
+        cursor.execute(f"SELECT 1 FROM {tabela} WHERE {coluna_id} = 1")
+        if not cursor.fetchone():
+            return 1
+            
+        # SQL para encontrar o menor ID que não existe na sequência
+        # Procuramos por t1.id + 1 onde t1.id + 1 não existe na tabela
+        sql = f"""
+        SELECT MIN({coluna_id} + 1) 
+        FROM {tabela} t1 
+        WHERE NOT EXISTS (
+            SELECT 1 
+            FROM {tabela} t2 
+            WHERE t2.{coluna_id} = t1.{coluna_id} + 1
+        )
+        """
+        cursor.execute(sql)
+        proximo_id = cursor.fetchone()[0]
+        
+        return proximo_id if proximo_id else 1
+    except Exception as e:
+        print(f"Erro ao encontrar menor ID: {e}")
+        return 1
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
